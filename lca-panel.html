@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facade LCA Lifecycle Monitor</title>
+  <link rel="stylesheet" href="lca-panel.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <main class="lca-shell">
+    <header class="lca-header card">
+      <div>
+        <h1 id="pageTitle">Façade LCA Lifecycle Monitor</h1>
+        <div class="subtitle-row">
+          <span id="panelSubtitle">Panel —</span>
+          <span class="dot">•</span>
+          <span id="statusSubtitle">Status —</span>
+          <span class="dot">•</span>
+          <span id="updatedSubtitle">Updated —</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn" class="ghost-btn" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <article class="summary-card card">
+        <div class="summary-label">Panel Identity</div>
+        <div id="cardPanelId" class="summary-value">—</div>
+      </article>
+      <article class="summary-card card">
+        <div class="summary-label">Design Baseline U-Value</div>
+        <div id="cardBaselineU" class="summary-value">—</div>
+      </article>
+      <article class="summary-card card">
+        <div class="summary-label">Total Embodied CO₂e</div>
+        <div id="cardEmbodied" class="summary-value">—</div>
+      </article>
+      <article class="summary-card card">
+        <div class="summary-label">Cumulative Operational CO₂e Increase</div>
+        <div id="cardOperational" class="summary-value emphasis">—</div>
+      </article>
+      <article class="summary-card card">
+        <div class="summary-label">Latest Daily Extra Energy</div>
+        <div id="cardExtraEnergy" class="summary-value">—</div>
+      </article>
+      <article class="summary-card card">
+        <div class="summary-label">Daily Records Available</div>
+        <div id="cardRecordCount" class="summary-value">—</div>
+      </article>
+    </section>
+
+    <section id="errorBox" class="error-box hidden"></section>
+
+    <section class="content-grid">
+      <div class="left-column">
+        <article class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Measured vs Baseline U-Value</h2>
+              <p>Historical performance day as analytical date.</p>
+            </div>
+          </div>
+          <div class="chart-wrap tall-chart">
+            <canvas id="uChart"></canvas>
+          </div>
+        </article>
+
+        <article class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Daily Extra Energy Consumption</h2>
+              <p>Daily added energy caused by thermal-performance deviation, with cumulative total.</p>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="energyChart"></canvas>
+          </div>
+        </article>
+
+        <article class="card chart-card">
+          <div class="card-head">
+            <div>
+              <h2>Daily Operational CO₂ Increment</h2>
+              <p>Daily and cumulative operational carbon increase due to added energy demand.</p>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="carbonChart"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <aside class="right-column">
+        <article class="card side-card">
+          <div class="card-head compact-head">
+            <div>
+              <h2>Embodied CO₂e Breakdown by Component</h2>
+              <p>Component-level material inventory from the baseline dossier.</p>
+            </div>
+          </div>
+          <div class="ring-wrap">
+            <canvas id="embodiedChart"></canvas>
+          </div>
+          <div id="embodiedLegend" class="legend-list"></div>
+        </article>
+
+        <article class="card side-card">
+          <div class="card-head compact-head">
+            <div>
+              <h2>Operational CO₂e Summary</h2>
+              <p>Total accumulated operational carbon increase from performance deviation.</p>
+            </div>
+          </div>
+          <div class="ring-wrap small-ring">
+            <canvas id="operationalRingChart"></canvas>
+          </div>
+          <div id="operationalRingText" class="ring-text-block">—</div>
+        </article>
+
+        <article class="card side-card">
+          <div class="card-head compact-head">
+            <div>
+              <h2>Replacement Timeline</h2>
+              <p>Embodied-carbon updates caused by future replacement events.</p>
+            </div>
+          </div>
+          <div id="replacementTimeline" class="timeline-wrap"></div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="card table-card">
+      <div class="card-head">
+        <div>
+          <h2>Traceability & Verification Ledger</h2>
+          <p>Historical day is the primary analytical date. Hashes and transaction IDs are shown as proof metadata.</p>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Historical Day</th>
+              <th>Measured U<sub>dyn</sub></th>
+              <th>Baseline U</th>
+              <th>ΔU</th>
+              <th>Added Energy (kWh/day)</th>
+              <th>Daily CO₂Δ (kg)</th>
+              <th>Cumulative CO₂Δ (kg)</th>
+              <th>Snapshot Hash</th>
+              <th>Chain Tx Hash</th>
+              <th>Stored Timestamp</th>
+              <th>Chain Status</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="lca-panel.js"></script>
+</body>
+</html>
