@@ -21,10 +21,6 @@
   box-sizing: border-box;
 }
 
-body, button, input, select, textarea, table, th, td {
-  font-family: "Utopia", "Times New Roman", serif;
-}
-
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
