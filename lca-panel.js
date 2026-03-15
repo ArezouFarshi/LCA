@@ -8,6 +8,7 @@ const palette = {
   blue: "#53749a",
   gold: "#af8e57",
   green: "#6c945f",
+  teal: "#4f8a8b",
   orange: "#d08b38",
   softOrange: "rgba(208, 139, 56, 0.24)",
   softGreen: "rgba(106, 160, 112, 0.22)",
@@ -15,6 +16,11 @@ const palette = {
   muted: "#6a7785",
   line: "#c9d2dc"
 };
+
+if (window.Chart) {
+  Chart.defaults.font.family = '"Utopia", "Times New Roman", serif';
+  Chart.defaults.color = "#334155";
+}
 
 let charts = {};
 let autoRefreshHandle = null;
@@ -205,7 +211,9 @@ function renderUChart(records) {
   const labels = records.map((r) => formatDay(r.day));
   const measured = records.map((r) => r.measured_u_dyn_daily ?? null);
   const baseline = records.map((r) => r.baseline_u_value ?? null);
+  const deltaU = records.map((r) => r.delta_u ?? null);
   const outdoor = records.map((r) => r.out_temp_daily_c ?? null);
+  const indoor = records.map((r) => r.room_temp_daily_c ?? null);
 
   upsertChart("uChart", document.getElementById("uChart"), {
     type: "line",
@@ -220,7 +228,8 @@ function renderUChart(records) {
           borderWidth: 2.4,
           pointRadius: 2,
           tension: 0.25,
-          yAxisID: "y"
+          yAxisID: "y",
+          order: 1
         },
         {
           label: "Baseline U-Value",
@@ -230,7 +239,30 @@ function renderUChart(records) {
           borderWidth: 2.1,
           pointRadius: 0,
           tension: 0,
-          yAxisID: "y"
+          yAxisID: "y",
+          order: 2
+        },
+        {
+          label: "ΔU (Measured − Baseline)",
+          data: deltaU,
+          borderColor: palette.orange,
+          borderDash: [3, 5],
+          borderWidth: 1.8,
+          pointRadius: 0,
+          tension: 0.18,
+          yAxisID: "y",
+          order: 3
+        },
+        {
+          label: "Indoor Temperature (°C)",
+          data: indoor,
+          borderColor: palette.teal,
+          borderDash: [8, 4],
+          borderWidth: 1.9,
+          pointRadius: 0,
+          tension: 0.25,
+          yAxisID: "y1",
+          order: 4
         },
         {
           label: "Outdoor Temperature (°C)",
@@ -240,7 +272,8 @@ function renderUChart(records) {
           borderWidth: 1.8,
           pointRadius: 0,
           tension: 0.25,
-          yAxisID: "y1"
+          yAxisID: "y1",
+          order: 5
         }
       ]
     },
@@ -249,7 +282,20 @@ function renderUChart(records) {
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { position: "bottom" }
+        legend: { position: "bottom" },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const label = ctx.dataset.label || "";
+              const value = ctx.raw;
+              if (value === null || value === undefined) return `${label}: —`;
+              if (label.includes("Temperature")) {
+                return `${label}: ${fmtNumber(value, 3)} °C`;
+              }
+              return `${label}: ${fmtNumber(value, 4)} W/m²K`;
+            }
+          }
+        }
       },
       scales: {
         x: {
@@ -257,12 +303,12 @@ function renderUChart(records) {
           grid: { color: "rgba(201,210,220,0.35)" }
         },
         y: {
-          title: { display: true, text: "U-Value (W/m²K)" },
+          title: { display: true, text: "U-Value / ΔU (W/m²K)" },
           grid: { color: "rgba(201,210,220,0.35)" }
         },
         y1: {
           position: "right",
-          title: { display: true, text: "Outdoor Temperature (°C)" },
+          title: { display: true, text: "Temperature (°C)" },
           grid: { drawOnChartArea: false }
         }
       }
@@ -489,7 +535,12 @@ function render(payload) {
   renderCarbonChart(records);
   renderEmbodiedChart(baseline);
   renderOperationalRing(baseline, records);
-  renderReplacementTimeline(replacements, baseline?.current_totals?.current_embodied_kgco2e ?? baseline?.baseline_environmental_profile?.total_embodied_kgco2e ?? 0);
+  renderReplacementTimeline(
+    replacements,
+    baseline?.current_totals?.current_embodied_kgco2e ??
+      baseline?.baseline_environmental_profile?.total_embodied_kgco2e ??
+      0
+  );
   renderLedger(records);
 }
 
