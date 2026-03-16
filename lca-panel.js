@@ -283,29 +283,6 @@ function renderLedger(records) {
   }).join("");
 }
 
-  body.innerHTML = records.map((rec) => {
-    const ok = !rec.chain_error && rec.chain_tx_hash;
-    const statusClass = ok ? "status-ok" : "status-fail";
-    const statusText = ok ? "Anchored" : (rec.chain_error ? "Issue" : "Pending");
-
-    return `
-      <tr>
-        <td>${escapeHtml(formatDay(rec.day))}</td>
-        <td>${fmtNumber(rec.measured_u_dyn_daily, 4)}</td>
-        <td>${fmtNumber(rec.baseline_u_value, 4)}</td>
-        <td>${fmtNumber(rec.delta_u, 4)}</td>
-        <td>${fmtNumber(rec.extra_energy_kwh_day, 4)}</td>
-        <td>${fmtNumber(rec.operational_co2_delta_kg, 4)}</td>
-        <td>${fmtNumber(rec.cumulative_operational_co2_delta_kg, 4)}</td>
-        <td class="hash-cell" title="${escapeHtml(rec.snapshot_hash_hex || "")}">${escapeHtml(shortenHash(rec.snapshot_hash_hex))}</td>
-        <td class="tx-cell" title="${escapeHtml(rec.chain_tx_hash || "")}">${escapeHtml(shortenHash(rec.chain_tx_hash))}</td>
-        <td>${escapeHtml(formatStoredTimestamp(rec.timestamp))}</td>
-        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-      </tr>
-    `;
-  }).join("");
-}
-
 function renderCards(baseline, records, panelId) {
   const baselineProfile = baseline?.baseline_environmental_profile || {};
   const currentTotals = baseline?.current_totals || {};
