@@ -274,7 +274,6 @@ function renderLedger(records) {
         <td>${fmtNumber(rec.extra_energy_kwh_day, 4)}</td>
         <td>${fmtNumber(rec.operational_co2_delta_kg, 4)}</td>
         <td>${fmtNumber(rec.cumulative_operational_co2_delta_kg, 4)}</td>
-        <td class="hash-cell">${snapshotCell}</td>
         <td class="tx-cell">${txCell}</td>
         <td>${escapeHtml(formatStoredTimestamp(rec.timestamp))}</td>
         <td><span class="status-pill ${statusClass}">${statusText}</span></td>
