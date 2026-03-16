@@ -291,7 +291,7 @@ function renderCards(baseline, records, panelId) {
   setText("pageTitle", `Façade LCA Lifecycle Monitor: ${panelId}`);
   setText("panelSubtitle", `Panel ${panelId}`);
   setText("statusSubtitle", statusText);
-  setText("updatedSubtitle", `Source ${buildApiUrl()}`);
+  setText("updatedSubtitle", " ");
 
   setText("cardPanelId", panelId || "—");
   setText("cardBaselineU", fmtUnit(baselineProfile.baseline_u_value_w_m2k, "W/m²K", 2));
