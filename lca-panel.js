@@ -210,6 +210,16 @@ function renderReplacementTimeline(replacements, baselineTotal) {
   wrap.innerHTML = items.join("");
 }
 
+function buildSepoliaTxUrl(txHash) {
+  if (!txHash) return "";
+  return `https://sepolia.etherscan.io/tx/${encodeURIComponent(String(txHash).trim())}`;
+}
+
+function buildSepoliaSearchUrl(value) {
+  if (!value) return "";
+  return `https://sepolia.etherscan.io/search?f=0&q=${encodeURIComponent(String(value).trim())}`;
+}
+
 function renderLedger(records) {
   const body = document.getElementById("ledgerBody");
   if (!body) return;
@@ -222,6 +232,56 @@ function renderLedger(records) {
     `;
     return;
   }
+
+  body.innerHTML = records.map((rec) => {
+    const ok = !rec.chain_error && rec.chain_tx_hash;
+    const statusClass = ok ? "status-ok" : "status-fail";
+    const statusText = ok ? "Anchored" : (rec.chain_error ? "Issue" : "Pending");
+
+    const snapshotHash = rec.snapshot_hash_hex || "";
+    const chainTxHash = rec.chain_tx_hash || "";
+
+    const snapshotCell = snapshotHash
+      ? `
+        <a
+          href="${buildSepoliaSearchUrl(snapshotHash)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hash-link"
+          title="${escapeHtml(snapshotHash)}"
+        >${escapeHtml(shortenHash(snapshotHash))}</a>
+      `
+      : "—";
+
+    const txCell = chainTxHash
+      ? `
+        <a
+          href="${buildSepoliaTxUrl(chainTxHash)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hash-link"
+          title="${escapeHtml(chainTxHash)}"
+        >${escapeHtml(shortenHash(chainTxHash))}</a>
+      `
+      : "—";
+
+    return `
+      <tr>
+        <td>${escapeHtml(formatDay(rec.day))}</td>
+        <td>${fmtNumber(rec.measured_u_dyn_daily, 4)}</td>
+        <td>${fmtNumber(rec.baseline_u_value, 4)}</td>
+        <td>${fmtNumber(rec.delta_u, 4)}</td>
+        <td>${fmtNumber(rec.extra_energy_kwh_day, 4)}</td>
+        <td>${fmtNumber(rec.operational_co2_delta_kg, 4)}</td>
+        <td>${fmtNumber(rec.cumulative_operational_co2_delta_kg, 4)}</td>
+        <td class="hash-cell">${snapshotCell}</td>
+        <td class="tx-cell">${txCell}</td>
+        <td>${escapeHtml(formatStoredTimestamp(rec.timestamp))}</td>
+        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+      </tr>
+    `;
+  }).join("");
+}
 
   body.innerHTML = records.map((rec) => {
     const ok = !rec.chain_error && rec.chain_tx_hash;
