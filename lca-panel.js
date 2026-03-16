@@ -1,8 +1,15 @@
 const DEFAULT_API_BASE = "https://oracle-ml-oracle-backend.onrender.com/api/lca";
 const params = new URLSearchParams(window.location.search);
 const PANEL_ID = params.get("panel_id") || "ID_27_C_42";
-const API_URL = params.get("api_url") || `${DEFAULT_API_BASE}/${encodeURIComponent(PANEL_ID)}`;
+const RAW_API_URL = params.get("api_url") || `${DEFAULT_API_BASE}/${encodeURIComponent(PANEL_ID)}`;
 const REFRESH_MS = Number(params.get("refresh_ms") || 60000);
+
+const PRIMARY_PROFILE_OPTIONS = [
+  { value: "lombardy_gas_boiler", label: "Lombardy gas boiler" },
+  { value: "lombardy_heat_pump", label: "Lombardy heat pump" }
+];
+
+let selectedPrimaryProfile = params.get("pe_profile") || "lombardy_heat_pump";
 
 const palette = {
   blue: "#53749a",
@@ -13,17 +20,37 @@ const palette = {
   softOrange: "rgba(208, 139, 56, 0.24)",
   softGreen: "rgba(106, 160, 112, 0.22)",
   softBlue: "rgba(83, 116, 154, 0.18)",
+  softPurple: "rgba(97, 84, 141, 0.20)",
+  purple: "#61548d",
   muted: "#6a7785",
   line: "#c9d2dc"
 };
 
 if (window.Chart) {
-  Chart.defaults.font.family = '"Utopia", "Times New Roman", serif';
   Chart.defaults.color = "#334155";
 }
 
 let charts = {};
 let autoRefreshHandle = null;
+
+function buildApiUrl() {
+  try {
+    const u = new URL(RAW_API_URL, window.location.href);
+    if (selectedPrimaryProfile) {
+      u.searchParams.set("pe_profile", selectedPrimaryProfile);
+    }
+    return u.toString();
+  } catch (_) {
+    const hasQuery = RAW_API_URL.includes("?");
+    const base = RAW_API_URL.split("?")[0];
+    const q = hasQuery ? RAW_API_URL.split("?")[1] : "";
+    const parts = q ? q.split("&").filter(Boolean).filter((x) => !x.startsWith("pe_profile=")) : [];
+    if (selectedPrimaryProfile) {
+      parts.push(`pe_profile=${encodeURIComponent(selectedPrimaryProfile)}`);
+    }
+    return parts.length ? `${base}?${parts.join("&")}` : base;
+  }
+}
 
 function fmtNumber(value, digits = 2) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
@@ -74,12 +101,14 @@ function setText(id, value) {
 
 function showError(message) {
   const box = document.getElementById("errorBox");
+  if (!box) return;
   box.textContent = message;
   box.classList.remove("hidden");
 }
 
 function clearError() {
   const box = document.getElementById("errorBox");
+  if (!box) return;
   box.textContent = "";
   box.classList.add("hidden");
 }
@@ -92,12 +121,38 @@ function destroyChart(name) {
 }
 
 function upsertChart(name, ctx, config) {
+  if (!ctx) return;
   destroyChart(name);
   charts[name] = new Chart(ctx, config);
 }
 
+function ensurePrimaryProfileSelector(activeProfile) {
+  const select = document.getElementById("primaryEnergyProfileSelect");
+  if (!select) return;
+
+  if (!select.dataset.initialized) {
+    select.innerHTML = PRIMARY_PROFILE_OPTIONS.map((opt) => `
+      <option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>
+    `).join("");
+
+    select.addEventListener("change", () => {
+      selectedPrimaryProfile = select.value || "lombardy_heat_pump";
+      fetchData();
+    });
+
+    select.dataset.initialized = "1";
+  }
+
+  const targetValue = activeProfile || selectedPrimaryProfile || "lombardy_heat_pump";
+  if ([...select.options].some((o) => o.value === targetValue)) {
+    select.value = targetValue;
+  }
+}
+
 function buildEmbodiedLegend(components) {
   const container = document.getElementById("embodiedLegend");
+  if (!container) return;
+
   if (!components.length) {
     container.innerHTML = `<div class="small-muted">No embodied-component data available.</div>`;
     return;
@@ -117,6 +172,8 @@ function buildEmbodiedLegend(components) {
 
 function renderReplacementTimeline(replacements, baselineTotal) {
   const wrap = document.getElementById("replacementTimeline");
+  if (!wrap) return;
+
   const items = [];
 
   items.push(`
@@ -155,6 +212,7 @@ function renderReplacementTimeline(replacements, baselineTotal) {
 
 function renderLedger(records) {
   const body = document.getElementById("ledgerBody");
+  if (!body) return;
 
   if (!records.length) {
     body.innerHTML = `
@@ -179,8 +237,8 @@ function renderLedger(records) {
         <td>${fmtNumber(rec.extra_energy_kwh_day, 4)}</td>
         <td>${fmtNumber(rec.operational_co2_delta_kg, 4)}</td>
         <td>${fmtNumber(rec.cumulative_operational_co2_delta_kg, 4)}</td>
-        <td class="hash-cell" title="${escapeHtml(rec.snapshot_hash_hex || '')}">${escapeHtml(shortenHash(rec.snapshot_hash_hex))}</td>
-        <td class="tx-cell" title="${escapeHtml(rec.chain_tx_hash || '')}">${escapeHtml(shortenHash(rec.chain_tx_hash))}</td>
+        <td class="hash-cell" title="${escapeHtml(rec.snapshot_hash_hex || "")}">${escapeHtml(shortenHash(rec.snapshot_hash_hex))}</td>
+        <td class="tx-cell" title="${escapeHtml(rec.chain_tx_hash || "")}">${escapeHtml(shortenHash(rec.chain_tx_hash))}</td>
         <td>${escapeHtml(formatStoredTimestamp(rec.timestamp))}</td>
         <td><span class="status-pill ${statusClass}">${statusText}</span></td>
       </tr>
@@ -197,7 +255,7 @@ function renderCards(baseline, records, panelId) {
   setText("pageTitle", `Façade LCA Lifecycle Monitor: ${panelId}`);
   setText("panelSubtitle", `Panel ${panelId}`);
   setText("statusSubtitle", statusText);
-  setText("updatedSubtitle", `Source ${API_URL}`);
+  setText("updatedSubtitle", `Source ${buildApiUrl()}`);
 
   setText("cardPanelId", panelId || "—");
   setText("cardBaselineU", fmtUnit(baselineProfile.baseline_u_value_w_m2k, "W/m²K", 2));
@@ -498,29 +556,141 @@ function renderOperationalRing(baseline, records) {
     }
   });
 
-  document.getElementById("operationalRingText").innerHTML = `
+  const target = document.getElementById("operationalRingText");
+  if (!target) return;
+
+  target.innerHTML = `
     <strong>${fmtNumber(cumulative, 2)} kgCO₂e</strong>
     Total cumulative operational CO₂ increase<br>
     <span class="small-muted">Latest daily increment: ${fmtNumber(latestDaily, 4)} kgCO₂e</span>
   `;
 }
 
+function renderPrimaryEnergyChart(records) {
+  const canvas = document.getElementById("primaryEnergyChart");
+  if (!canvas) return;
+
+  const labels = records.map((r) => formatDay(r.day));
+  const daily = records.map((r) => {
+    const v = r.primary_total_kwh_day;
+    return v === null || v === undefined ? null : Number(v);
+  });
+  const cumulative = records.map((r) => {
+    const v = r.cumulative_primary_total_kwh;
+    return v === null || v === undefined ? null : Number(v);
+  });
+
+  upsertChart("primaryEnergyChart", canvas, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "bar",
+          label: "Daily Heating Primary Energy (kWh/day)",
+          data: daily,
+          backgroundColor: palette.softPurple,
+          borderColor: palette.purple,
+          borderWidth: 1.2,
+          yAxisID: "y"
+        },
+        {
+          type: "line",
+          label: "Cumulative Heating Primary Energy (kWh)",
+          data: cumulative,
+          borderColor: palette.purple,
+          backgroundColor: "transparent",
+          borderWidth: 2.2,
+          pointRadius: 2,
+          tension: 0.25,
+          yAxisID: "y1"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "bottom" }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: "Historical Performance Day" },
+          grid: { color: "rgba(201,210,220,0.35)" }
+        },
+        y: {
+          title: { display: true, text: "Daily Primary Energy (kWh/day)" },
+          grid: { color: "rgba(201,210,220,0.35)" }
+        },
+        y1: {
+          position: "right",
+          title: { display: true, text: "Cumulative Primary Energy (kWh)" },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+}
+
+function renderPrimaryEnergySummary(baseline, records, activeProfile) {
+  const wrap = document.getElementById("primaryEnergySummary");
+  if (!wrap) return;
+
+  const assumption = baseline?.primary_energy_assumption || {};
+  const currentTotals = baseline?.current_totals || {};
+  const latestRecord = records.length ? records[records.length - 1] : null;
+
+  const scenarioLabel = assumption?.scenario_label || activeProfile || "Heating scenario";
+  const carrier = assumption?.carrier || "—";
+  const latestDaily = currentTotals?.latest_primary_total_kwh ?? latestRecord?.primary_total_kwh_day ?? null;
+  const cumulative = currentTotals?.cumulative_primary_total_kwh ?? latestRecord?.cumulative_primary_total_kwh ?? null;
+  const latestRen = currentTotals?.latest_primary_renewable_kwh ?? latestRecord?.primary_renewable_kwh_day ?? null;
+  const latestNren = currentTotals?.latest_primary_non_renewable_kwh ?? latestRecord?.primary_non_renewable_kwh_day ?? null;
+
+  const hasPrimaryData = latestDaily !== null || cumulative !== null || latestRen !== null || latestNren !== null;
+
+  if (!hasPrimaryData) {
+    wrap.innerHTML = `
+      <div class="small-muted">
+        Primary-energy values are not available yet for the selected heating scenario.
+      </div>
+    `;
+    return;
+  }
+
+  wrap.innerHTML = `
+    <div class="primary-energy-summary-block">
+      <div><strong>${escapeHtml(scenarioLabel)}</strong></div>
+      <div class="small-muted">Carrier: ${escapeHtml(carrier)}</div>
+      <div class="primary-energy-grid">
+        <div><span class="small-muted">Latest daily primary energy</span><br><strong>${fmtUnit(latestDaily, "kWh", 3)}</strong></div>
+        <div><span class="small-muted">Cumulative primary energy</span><br><strong>${fmtUnit(cumulative, "kWh", 3)}</strong></div>
+        <div><span class="small-muted">Latest renewable share</span><br><strong>${fmtUnit(latestRen, "kWh", 3)}</strong></div>
+        <div><span class="small-muted">Latest non-renewable share</span><br><strong>${fmtUnit(latestNren, "kWh", 3)}</strong></div>
+      </div>
+    </div>
+  `;
+}
+
 async function fetchData() {
   clearError();
+  const apiUrl = buildApiUrl();
+
   try {
-    const response = await fetch(API_URL, { cache: "no-store" });
+    const response = await fetch(apiUrl, { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const payload = await response.json();
     render(payload);
   } catch (err) {
-    showError(`Unable to load LCA data from ${API_URL}. ${err.message}`);
+    showError(`Unable to load LCA data from ${apiUrl}. ${err.message}`);
   }
 }
 
 function render(payload) {
   const baseline = payload?.baseline || {};
+  const activeProfile = payload?.active_primary_energy_profile || selectedPrimaryProfile || "lombardy_heat_pump";
   const panelId = payload?.panel_id || baseline?.panel_id || PANEL_ID;
   const records = (payload?.operational_daily || payload?.baseline?.operational_history || [])
     .slice()
@@ -529,12 +699,17 @@ function render(payload) {
     .slice()
     .sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
+  selectedPrimaryProfile = activeProfile;
+  ensurePrimaryProfileSelector(activeProfile);
+
   renderCards(baseline, records, panelId);
   renderUChart(records);
   renderEnergyChart(records);
   renderCarbonChart(records);
   renderEmbodiedChart(baseline);
   renderOperationalRing(baseline, records);
+  renderPrimaryEnergyChart(records);
+  renderPrimaryEnergySummary(baseline, records, activeProfile);
   renderReplacementTimeline(
     replacements,
     baseline?.current_totals?.current_embodied_kgco2e ??
@@ -545,7 +720,13 @@ function render(payload) {
 }
 
 function init() {
-  document.getElementById("refreshBtn").addEventListener("click", fetchData);
+  ensurePrimaryProfileSelector(selectedPrimaryProfile);
+
+  const refreshBtn = document.getElementById("refreshBtn");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", fetchData);
+  }
+
   fetchData();
 
   if (REFRESH_MS > 0) {
