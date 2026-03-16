@@ -233,7 +233,11 @@ function renderLedger(records) {
     return;
   }
 
-  body.innerHTML = records.map((rec) => {
+  const ledgerRecords = [...records].sort((a, b) =>
+  String(b.day || "").localeCompare(String(a.day || ""))
+);
+
+body.innerHTML = ledgerRecords.map((rec) => {
     const ok = !rec.chain_error && rec.chain_tx_hash;
     const statusClass = ok ? "status-ok" : "status-fail";
     const statusText = ok ? "Anchored" : (rec.chain_error ? "Issue" : "Pending");
@@ -315,16 +319,18 @@ function renderUChart(records) {
       labels,
       datasets: [
         {
-          label: "Measured Dynamic U-Value",
-          data: measured,
-          borderColor: palette.blue,
-          backgroundColor: palette.softBlue,
-          borderWidth: 2.4,
-          pointRadius: 2,
-          tension: 0.25,
-          yAxisID: "y",
-          order: 1
-        },
+          {
+  label: "Measured U-Value",
+  data: measured,
+  borderColor: palette.blue,
+  backgroundColor: "rgba(83, 116, 154, 0.18)",
+  fill: "+1",
+  borderWidth: 2.4,
+  pointRadius: 2,
+  tension: 0.25,
+  yAxisID: "y",
+  order: 1
+},
         {
           label: "Baseline U-Value",
           data: baseline,
