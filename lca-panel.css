@@ -386,6 +386,16 @@ h1 {
   text-overflow: ellipsis;
 }
 
+.hash-link {
+  color: #3b6ea8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.hash-link:hover {
+  text-decoration: underline;
+}
+
 .status-pill {
   display: inline-flex;
   align-items: center;
