@@ -317,20 +317,20 @@ function renderUChart(records) {
     type: "line",
     data: {
       labels,
+
       datasets: [
-        {
-          {
-  label: "Measured U-Value",
-  data: measured,
-  borderColor: palette.blue,
-  backgroundColor: "rgba(83, 116, 154, 0.18)",
-  fill: "+1",
-  borderWidth: 2.4,
-  pointRadius: 2,
-  tension: 0.25,
-  yAxisID: "y",
-  order: 1
-},
+  {
+    label: "Measured U-Value",
+    data: measured,
+    borderColor: palette.blue,
+    backgroundColor: "rgba(83, 116, 154, 0.18)",
+    fill: "+1",
+    borderWidth: 2.4,
+    pointRadius: 2,
+    tension: 0.25,
+    yAxisID: "y",
+    order: 1
+  },
         {
           label: "Baseline U-Value",
           data: baseline,
