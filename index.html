@@ -129,6 +129,29 @@
           </div>
           <div id="replacementTimeline" class="timeline-wrap"></div>
         </article>
+
+        <article class="card side-card">
+          <div class="card-head compact-head">
+            <div>
+              <h2>Primary Energy Impact — Heating Scenario</h2>
+              <p>Scenario-based heating primary energy equivalent derived from façade-related extra thermal demand.</p>
+            </div>
+          </div>
+
+          <div class="primary-energy-controls">
+            <label for="primaryEnergyProfileSelect">Heating system scenario</label>
+            <select id="primaryEnergyProfileSelect" class="profile-select">
+              <option value="lombardy_gas_boiler">Lombardy gas boiler</option>
+              <option value="lombardy_heat_pump">Lombardy heat pump</option>
+            </select>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="primaryEnergyChart"></canvas>
+          </div>
+
+          <div id="primaryEnergySummary" class="ring-text-block">—</div>
+        </article>
       </aside>
     </section>
 
