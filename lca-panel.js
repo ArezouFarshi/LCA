@@ -126,165 +126,6 @@ function upsertChart(name, ctx, config) {
   charts[name] = new Chart(ctx, config);
 }
 
-function findSectionForElement(el) {
-  if (!el) return null;
-
-  let node = el;
-  while (node && node !== document.body) {
-    if (
-      node.matches &&
-      node.matches(".dashboard-card, .section-card, .card, .panel, .module, .widget, .box")
-    ) {
-      return node;
-    }
-
-    if (node.querySelector) {
-      const heading = node.querySelector(":scope > h1, :scope > h2, :scope > h3");
-      if (heading) {
-        return node;
-      }
-    }
-
-    node = node.parentElement;
-  }
-
-  return el.parentElement || null;
-}
-
-function findDirectChildContaining(section, el) {
-  if (!section || !el) return null;
-  return Array.from(section.children).find((child) => child === el || child.contains(el)) || null;
-}
-
-function mostCommonParent(sections) {
-  const counts = new Map();
-
-  sections.forEach((section) => {
-    if (section?.parentElement) {
-      counts.set(section.parentElement, (counts.get(section.parentElement) || 0) + 1);
-    }
-  });
-
-  let best = null;
-  let max = 0;
-
-  for (const [parent, count] of counts.entries()) {
-    if (count > max) {
-      max = count;
-      best = parent;
-    }
-  }
-
-  return best;
-}
-
-function applyPrimaryEnergyWideLayout() {
-  const chartEl = document.getElementById("primaryEnergyChart");
-  const summaryEl = document.getElementById("primaryEnergySummary");
-  const selectEl = document.getElementById("primaryEnergyProfileSelect");
-  const section = findSectionForElement(chartEl);
-
-  if (!section) return null;
-
-  section.style.gridColumn = "1 / -1";
-  section.style.width = "100%";
-
-  const chartBlock = findDirectChildContaining(section, chartEl);
-  const summaryBlock = findDirectChildContaining(section, summaryEl);
-  const selectBlock = findDirectChildContaining(section, selectEl);
-
-  let layout = section.querySelector(":scope > .primary-energy-layout");
-  let leftCol = section.querySelector(":scope > .primary-energy-layout > .primary-energy-left");
-  let rightCol = section.querySelector(":scope > .primary-energy-layout > .primary-energy-right");
-
-  if (!layout) {
-    layout = document.createElement("div");
-    layout.className = "primary-energy-layout";
-    layout.style.display = "grid";
-    layout.style.gridTemplateColumns = "minmax(0, 2.15fr) minmax(320px, 1fr)";
-    layout.style.gap = "24px";
-    layout.style.alignItems = "start";
-    layout.style.width = "100%";
-    layout.style.marginTop = "16px";
-
-    leftCol = document.createElement("div");
-    leftCol.className = "primary-energy-left";
-    leftCol.style.minWidth = "0";
-
-    rightCol = document.createElement("div");
-    rightCol.className = "primary-energy-right";
-    rightCol.style.minWidth = "0";
-    rightCol.style.display = "grid";
-    rightCol.style.gridTemplateRows = "auto 1fr";
-    rightCol.style.gap = "16px";
-    rightCol.style.alignItems = "start";
-
-    layout.appendChild(leftCol);
-    layout.appendChild(rightCol);
-
-    if (chartBlock) {
-      section.insertBefore(layout, chartBlock);
-    } else {
-      section.appendChild(layout);
-    }
-  }
-
-  if (chartBlock && leftCol && chartBlock.parentElement !== leftCol) {
-    leftCol.appendChild(chartBlock);
-  }
-
-  if (selectBlock && rightCol && selectBlock.parentElement !== rightCol) {
-    rightCol.appendChild(selectBlock);
-  }
-
-  if (summaryBlock && rightCol && summaryBlock.parentElement !== rightCol) {
-    rightCol.appendChild(summaryBlock);
-  }
-
-  if (chartBlock) {
-    chartBlock.style.height = "360px";
-    chartBlock.style.minHeight = "360px";
-  }
-
-  if (summaryBlock) {
-    summaryBlock.style.height = "100%";
-  }
-
-  return section;
-}
-
-function arrangeDashboardLayout() {
-  const uSection = findSectionForElement(document.getElementById("uChart"));
-  const embodiedSection = findSectionForElement(document.getElementById("embodiedChart"));
-  const energySection = findSectionForElement(document.getElementById("energyChart"));
-  const replacementSection = findSectionForElement(document.getElementById("replacementTimeline"));
-  const carbonSection = findSectionForElement(document.getElementById("carbonChart"));
-  const operationalSummarySection = findSectionForElement(document.getElementById("operationalRingChart"));
-  const primaryEnergySection = applyPrimaryEnergyWideLayout();
-  const ledgerSection = findSectionForElement(document.getElementById("ledgerBody"));
-
-  const orderedSections = [
-    uSection,
-    embodiedSection,
-    energySection,
-    replacementSection,
-    carbonSection,
-    operationalSummarySection,
-    primaryEnergySection,
-    ledgerSection
-  ].filter(Boolean);
-
-  const gridParent = mostCommonParent(orderedSections);
-
-  if (!gridParent) return;
-
-  orderedSections.forEach((section) => {
-    if (section.parentElement === gridParent) {
-      gridParent.appendChild(section);
-    }
-  });
-}
-
 function ensurePrimaryProfileSelector(activeProfile) {
   const select = document.getElementById("primaryEnergyProfileSelect");
   if (!select) return;
@@ -393,16 +234,28 @@ function renderLedger(records) {
   }
 
   const ledgerRecords = [...records].sort((a, b) =>
-    String(b.day || "").localeCompare(String(a.day || ""))
-  );
+  String(b.day || "").localeCompare(String(a.day || ""))
+);
 
-  body.innerHTML = ledgerRecords.map((rec) => {
+body.innerHTML = ledgerRecords.map((rec) => {
     const ok = !rec.chain_error && rec.chain_tx_hash;
     const statusClass = ok ? "status-ok" : "status-fail";
     const statusText = ok ? "Anchored" : (rec.chain_error ? "Issue" : "Pending");
 
     const snapshotHash = rec.snapshot_hash_hex || "";
     const chainTxHash = rec.chain_tx_hash || "";
+
+    const snapshotCell = snapshotHash
+      ? `
+        <a
+          href="${buildSepoliaSearchUrl(snapshotHash)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hash-link"
+          title="${escapeHtml(snapshotHash)}"
+        >${escapeHtml(shortenHash(snapshotHash))}</a>
+      `
+      : "—";
 
     const txCell = chainTxHash
       ? `
@@ -464,19 +317,20 @@ function renderUChart(records) {
     type: "line",
     data: {
       labels,
+
       datasets: [
-        {
-          label: "Measured U-Value",
-          data: measured,
-          borderColor: palette.blue,
-          backgroundColor: "rgba(83, 116, 154, 0.18)",
-          fill: "+1",
-          borderWidth: 2.4,
-          pointRadius: 2,
-          tension: 0.25,
-          yAxisID: "y",
-          order: 1
-        },
+  {
+    label: "Measured U-Value",
+    data: measured,
+    borderColor: palette.blue,
+    backgroundColor: "rgba(83, 116, 154, 0.18)",
+    fill: "+1",
+    borderWidth: 2.4,
+    pointRadius: 2,
+    tension: 0.25,
+    yAxisID: "y",
+    order: 1
+  },
         {
           label: "Baseline U-Value",
           data: baseline,
@@ -703,7 +557,7 @@ function renderEmbodiedChart(baseline) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`;
+            label: (ctx) => `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`
           }
         }
       }
@@ -737,7 +591,7 @@ function renderOperationalRing(baseline, records) {
           callbacks: {
             label: (ctx) => ctx.dataIndex === 0
               ? `${fmtNumber(ctx.raw, 4)} kgCO₂e`
-              : "";
+              : ""
           }
         }
       }
@@ -905,8 +759,6 @@ function render(payload) {
       0
   );
   renderLedger(records);
-
-  requestAnimationFrame(arrangeDashboardLayout);
 }
 
 function init() {
