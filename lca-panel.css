@@ -151,7 +151,7 @@ h1 {
 }
 
 .right-column {
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: minmax(520px, auto) auto 1fr;
   height: 100%;
 }
 
@@ -211,10 +211,17 @@ h1 {
   height: 240px;
 }
 
+.embodied-card .ring-wrap {
+  height: 300px;
+  max-width: 420px;
+  margin: 0 auto 14px;
+}
+
 .legend-list {
   display: grid;
-  gap: 8px;
-  margin-top: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 10px;
 }
 
 .legend-item {
@@ -252,7 +259,9 @@ h1 {
 
 .operational-summary-card .ring-wrap {
   flex: 0 0 auto;
-  margin: 0 auto 12px;
+  height: 210px;
+  max-width: 320px;
+  margin: 0 auto 10px;
 }
 
 .operational-summary-card .ring-text-block {
@@ -260,17 +269,18 @@ h1 {
   flex-direction: column;
   flex: 1;
   text-align: center;
+  justify-content: flex-start;
 }
 
 .operational-ring-main {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .operational-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: auto;
+  margin-top: 18px;
   text-align: left;
 }
 
@@ -556,6 +566,10 @@ h1 {
   }
 
   .operational-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .legend-list {
     grid-template-columns: 1fr;
   }
 
