@@ -98,21 +98,46 @@
           <article class="card side-card embodied-card">
             <div class="card-head compact-head">
               <div>
-                <h2>Embodied CO₂e Breakdown by Component</h2>
-                <p>Component-level material inventory from the baseline dossier.</p>
+                <h2>Embodied CO₂e Breakdown (A1–A3)</h2>
+                <p>Component-level baseline inventory with lifecycle-stage coverage in the current prototype.</p>
               </div>
             </div>
+
             <div class="ring-wrap">
               <canvas id="embodiedChart"></canvas>
             </div>
+
             <div id="embodiedLegend" class="legend-list"></div>
+
+            <div class="stage-coverage">
+              <div class="stage-row">
+                <div class="stage-name">A1–A3 (Product Stage)</div>
+                <div class="stage-status status-quantified">Quantified</div>
+              </div>
+              <div class="stage-row">
+                <div class="stage-name">A4–A5 (Construction Stage)</div>
+                <div class="stage-status status-pending">Recognized / Pending Data</div>
+              </div>
+              <div class="stage-row">
+                <div class="stage-name">B1–B7 (Use Stage)</div>
+                <div class="stage-status status-mixed">B6 quantified; B2–B4 activated when verified records are available</div>
+              </div>
+              <div class="stage-row">
+                <div class="stage-name">C1–C4 (End-of-Life Stage)</div>
+                <div class="stage-status status-future">Future Extension</div>
+              </div>
+              <div class="stage-row">
+                <div class="stage-name">D (Benefits Beyond System Boundary)</div>
+                <div class="stage-status status-future">Future Extension</div>
+              </div>
+            </div>
           </article>
 
-          <article class="card side-card">
+          <article class="card side-card replacement-card">
             <div class="card-head compact-head">
               <div>
                 <h2>Replacement Timeline</h2>
-                <p>Embodied-carbon updates caused by future replacement events.</p>
+                <p>Embodied-carbon updates from verified future replacement events.</p>
               </div>
             </div>
             <div id="replacementTimeline" class="timeline-wrap"></div>
