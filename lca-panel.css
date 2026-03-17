@@ -394,8 +394,8 @@ h1 {
 }
 
 .replacement-card .timeline-wrap {
-  min-height: 0;
-  height: calc(100% - 16px);
+  min-height: 220px;
+  height: auto;
 }
 
 .timeline-wrap {
