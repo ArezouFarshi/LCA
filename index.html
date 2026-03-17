@@ -55,104 +55,112 @@
     <section id="errorBox" class="error-box hidden"></section>
 
     <section class="content-grid">
-      <div class="left-column">
-        <article class="card chart-card">
-          <div class="card-head">
-            <div>
-              <h2>Measured vs Baseline U-Value</h2>
-              <p>Historical performance day as analytical date.</p>
+      <div class="upper-grid">
+        <div class="left-column">
+          <article class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h2>Measured vs Baseline U-Value</h2>
+                <p>Historical performance day as analytical date.</p>
+              </div>
             </div>
-          </div>
-          <div class="chart-wrap tall-chart">
-            <canvas id="uChart"></canvas>
-          </div>
-        </article>
+            <div class="chart-wrap tall-chart">
+              <canvas id="uChart"></canvas>
+            </div>
+          </article>
 
-        <article class="card chart-card">
-          <div class="card-head">
-            <div>
-              <h2>Daily Extra Energy Consumption</h2>
-              <p>Daily added energy caused by thermal-performance deviation, with cumulative total.</p>
+          <article class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h2>Daily Extra Energy Consumption</h2>
+                <p>Daily added energy caused by thermal-performance deviation, with cumulative total.</p>
+              </div>
             </div>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="energyChart"></canvas>
-          </div>
-        </article>
+            <div class="chart-wrap">
+              <canvas id="energyChart"></canvas>
+            </div>
+          </article>
 
-        <article class="card chart-card">
-          <div class="card-head">
-            <div>
-              <h2>Daily Operational CO₂ Increment</h2>
-              <p>Daily and cumulative operational carbon increase due to added energy demand.</p>
+          <article class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h2>Daily Operational CO₂ Increment</h2>
+                <p>Daily and cumulative operational carbon increase due to added energy demand.</p>
+              </div>
             </div>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="carbonChart"></canvas>
-          </div>
-        </article>
+            <div class="chart-wrap">
+              <canvas id="carbonChart"></canvas>
+            </div>
+          </article>
+        </div>
+
+        <aside class="right-column">
+          <article class="card side-card">
+            <div class="card-head compact-head">
+              <div>
+                <h2>Embodied CO₂e Breakdown by Component</h2>
+                <p>Component-level material inventory from the baseline dossier.</p>
+              </div>
+            </div>
+            <div class="ring-wrap">
+              <canvas id="embodiedChart"></canvas>
+            </div>
+            <div id="embodiedLegend" class="legend-list"></div>
+          </article>
+
+          <article class="card side-card">
+            <div class="card-head compact-head">
+              <div>
+                <h2>Replacement Timeline</h2>
+                <p>Embodied-carbon updates caused by future replacement events.</p>
+              </div>
+            </div>
+            <div id="replacementTimeline" class="timeline-wrap"></div>
+          </article>
+
+          <article class="card side-card">
+            <div class="card-head compact-head">
+              <div>
+                <h2>Operational CO₂e Summary</h2>
+                <p>Total accumulated operational carbon increase from performance deviation.</p>
+              </div>
+            </div>
+            <div class="ring-wrap small-ring">
+              <canvas id="operationalRingChart"></canvas>
+            </div>
+            <div id="operationalRingText" class="ring-text-block">—</div>
+          </article>
+        </aside>
       </div>
 
-      <aside class="right-column">
-        <article class="card side-card">
-          <div class="card-head compact-head">
-            <div>
-              <h2>Embodied CO₂e Breakdown by Component</h2>
-              <p>Component-level material inventory from the baseline dossier.</p>
-            </div>
+      <article class="card primary-energy-card">
+        <div class="card-head">
+          <div>
+            <h2>Primary Energy Impact — Heating Scenario</h2>
+            <p>Scenario-based heating primary energy equivalent derived from façade-related extra thermal demand.</p>
           </div>
-          <div class="ring-wrap">
-            <canvas id="embodiedChart"></canvas>
-          </div>
-          <div id="embodiedLegend" class="legend-list"></div>
-        </article>
+        </div>
 
-        <article class="card side-card">
-          <div class="card-head compact-head">
-            <div>
-              <h2>Operational CO₂e Summary</h2>
-              <p>Total accumulated operational carbon increase from performance deviation.</p>
-            </div>
-          </div>
-          <div class="ring-wrap small-ring">
-            <canvas id="operationalRingChart"></canvas>
-          </div>
-          <div id="operationalRingText" class="ring-text-block">—</div>
-        </article>
-
-        <article class="card side-card">
-          <div class="card-head compact-head">
-            <div>
-              <h2>Replacement Timeline</h2>
-              <p>Embodied-carbon updates caused by future replacement events.</p>
-            </div>
-          </div>
-          <div id="replacementTimeline" class="timeline-wrap"></div>
-        </article>
-
-        <article class="card side-card">
-          <div class="card-head compact-head">
-            <div>
-              <h2>Primary Energy Impact — Heating Scenario</h2>
-              <p>Scenario-based heating primary energy equivalent derived from façade-related extra thermal demand.</p>
+        <div class="primary-energy-layout">
+          <div class="primary-energy-chart-block">
+            <div class="chart-wrap primary-energy-chart-wrap">
+              <canvas id="primaryEnergyChart"></canvas>
             </div>
           </div>
 
-          <div class="primary-energy-controls">
-            <label for="primaryEnergyProfileSelect">Heating system scenario</label>
-            <select id="primaryEnergyProfileSelect" class="profile-select">
-              <option value="lombardy_gas_boiler">Lombardy gas boiler</option>
-              <option value="lombardy_heat_pump">Lombardy heat pump</option>
-            </select>
-          </div>
+          <div class="primary-energy-side">
+            <div class="primary-energy-controls">
+              <label for="primaryEnergyProfileSelect">Heating system scenario</label>
+              <select id="primaryEnergyProfileSelect" class="profile-select">
+                <option value="lombardy_gas_boiler">Lombardy gas boiler</option>
+                <option value="lombardy_heat_pump">Lombardy heat pump</option>
+              </select>
+            </div>
 
-          <div class="chart-wrap">
-            <canvas id="primaryEnergyChart"></canvas>
+            <div id="primaryEnergySummary" class="primary-energy-summary-block">—</div>
           </div>
-
-          <div id="primaryEnergySummary" class="ring-text-block">—</div>
-        </article>
-      </aside>
+        </div>
+      </article>
     </section>
 
     <section class="card table-card">
