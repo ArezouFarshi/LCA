@@ -140,7 +140,7 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .left-column,
@@ -148,6 +148,11 @@ h1 {
   display: grid;
   gap: 16px;
   align-content: start;
+}
+
+.right-column {
+  grid-template-rows: auto auto 1fr;
+  height: 100%;
 }
 
 .chart-card,
@@ -238,6 +243,55 @@ h1 {
   font-size: 1.65rem;
   color: var(--text);
   margin-bottom: 4px;
+}
+
+.operational-summary-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.operational-summary-card .ring-wrap {
+  flex: 0 0 auto;
+  margin: 0 auto 12px;
+}
+
+.operational-summary-card .ring-text-block {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: center;
+}
+
+.operational-ring-main {
+  margin-bottom: 16px;
+}
+
+.operational-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+  text-align: left;
+}
+
+.operational-metric {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fcfcfd;
+}
+
+.operational-metric-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.operational-metric-value {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
 }
 
 .timeline-wrap {
@@ -473,6 +527,11 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .right-column {
+    grid-template-rows: auto;
+    height: auto;
+  }
+
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -493,6 +552,10 @@ h1 {
   }
 
   .primary-energy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operational-metrics {
     grid-template-columns: 1fr;
   }
 
