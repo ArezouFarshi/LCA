@@ -568,6 +568,18 @@ function renderEmbodiedChart(baseline) {
 function renderOperationalRing(baseline, records) {
   const cumulative = Number(baseline?.current_totals?.cumulative_operational_co2e_kg || 0);
   const latestDaily = Number(records.length ? records[records.length - 1].operational_co2_delta_kg || 0 : 0);
+  const dailyValues = records
+    .map((r) => Number(r.operational_co2_delta_kg))
+    .filter((v) => Number.isFinite(v));
+
+  const averageDaily = dailyValues.length
+    ? dailyValues.reduce((sum, v) => sum + v, 0) / dailyValues.length
+    : null;
+
+  const peakDaily = dailyValues.length
+    ? Math.max(...dailyValues)
+    : null;
+
   const chartMax = Math.max(cumulative, 1);
 
   upsertChart("operationalRingChart", document.getElementById("operationalRingChart"), {
@@ -602,9 +614,32 @@ function renderOperationalRing(baseline, records) {
   if (!target) return;
 
   target.innerHTML = `
-    <strong>${fmtNumber(cumulative, 2)} kgCO₂e</strong>
-    Total cumulative operational CO₂ increase<br>
-    <span class="small-muted">Latest daily increment: ${fmtNumber(latestDaily, 4)} kgCO₂e</span>
+    <div class="operational-ring-main">
+      <strong>${fmtNumber(cumulative, 2)} kgCO₂e</strong>
+      Total cumulative operational CO₂ increase
+    </div>
+
+    <div class="operational-metrics">
+      <div class="operational-metric">
+        <div class="operational-metric-label">Latest daily increment</div>
+        <div class="operational-metric-value">${fmtUnit(latestDaily, "kgCO₂e", 4)}</div>
+      </div>
+
+      <div class="operational-metric">
+        <div class="operational-metric-label">Average daily increment</div>
+        <div class="operational-metric-value">${fmtUnit(averageDaily, "kgCO₂e", 4)}</div>
+      </div>
+
+      <div class="operational-metric">
+        <div class="operational-metric-label">Peak daily increment</div>
+        <div class="operational-metric-value">${fmtUnit(peakDaily, "kgCO₂e", 4)}</div>
+      </div>
+
+      <div class="operational-metric">
+        <div class="operational-metric-label">Recorded days</div>
+        <div class="operational-metric-value">${records.length}</div>
+      </div>
+    </div>
   `;
 }
 
