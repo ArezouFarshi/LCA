@@ -703,7 +703,7 @@ function renderEmbodiedChart(baseline) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`
+            label: (ctx) => `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`;
           }
         }
       }
@@ -737,7 +737,7 @@ function renderOperationalRing(baseline, records) {
           callbacks: {
             label: (ctx) => ctx.dataIndex === 0
               ? `${fmtNumber(ctx.raw, 4)} kgCO₂e`
-              : ""
+              : "";
           }
         }
       }
