@@ -132,21 +132,28 @@ h1 {
 
 .content-grid {
   display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.upper-grid {
+  display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
   gap: 16px;
   align-items: start;
-  margin-bottom: 16px;
 }
 
 .left-column,
 .right-column {
   display: grid;
   gap: 16px;
+  align-content: start;
 }
 
 .chart-card,
 .side-card,
-.table-card {
+.table-card,
+.primary-energy-card {
   padding: 14px 14px 12px;
 }
 
@@ -296,14 +303,35 @@ h1 {
   font-size: 1rem;
 }
 
-/* ------------------------- */
-/* Primary energy block */
-/* ------------------------- */
+.primary-energy-card {
+  width: 100%;
+}
+
+.primary-energy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.primary-energy-chart-block {
+  min-width: 0;
+}
+
+.primary-energy-chart-wrap {
+  min-height: 420px;
+}
+
+.primary-energy-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
 
 .primary-energy-controls {
   display: grid;
   gap: 8px;
-  margin: 2px 0 12px;
+  margin: 2px 0 0;
 }
 
 .primary-energy-controls label {
@@ -331,6 +359,17 @@ h1 {
 
 .primary-energy-summary-block {
   width: 100%;
+  text-align: left;
+  font-size: 0.98rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.primary-energy-summary-block strong {
+  display: block;
+  font-size: 1.2rem;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
 .primary-energy-grid {
@@ -352,8 +391,6 @@ h1 {
   font-size: 1.02rem;
   line-height: 1.25;
 }
-
-/* ------------------------- */
 
 .table-scroll {
   overflow-x: auto;
@@ -428,12 +465,20 @@ h1 {
 }
 
 @media (max-width: 1080px) {
-  .content-grid {
+  .upper-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-energy-layout {
     grid-template-columns: 1fr;
   }
 
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primary-energy-chart-wrap {
+    min-height: 340px;
   }
 }
 
@@ -457,5 +502,9 @@ h1 {
 
   .summary-value {
     font-size: 1.5rem;
+  }
+
+  .primary-energy-chart-wrap {
+    min-height: 300px;
   }
 }
