@@ -145,14 +145,38 @@ h1 {
 
 .left-column,
 .right-column {
-  display: grid;
-  gap: 16px;
-  align-content: start;
+  display: contents;
 }
 
-.right-column {
-  grid-template-rows: minmax(520px, auto) auto 1fr;
-  height: 100%;
+/* strict 3-row / 2-column layout */
+.left-column > article:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.left-column > article:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.left-column > article:nth-child(3) {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.right-column > article:nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.right-column > article:nth-child(2) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.right-column > article:nth-child(3) {
+  grid-column: 2;
+  grid-row: 3;
 }
 
 .chart-card,
@@ -160,6 +184,11 @@ h1 {
 .table-card,
 .primary-energy-card {
   padding: 14px 14px 12px;
+}
+
+.chart-card,
+.side-card {
+  height: 100%;
 }
 
 .card-head {
@@ -208,20 +237,21 @@ h1 {
 }
 
 .small-ring {
-  height: 240px;
+  height: 200px;
 }
 
 .embodied-card .ring-wrap {
-  height: 300px;
-  max-width: 420px;
-  margin: 0 auto 14px;
+  height: 230px;
+  max-width: 340px;
+  margin: 0 auto 10px;
 }
 
 .legend-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
-  margin-top: 10px;
+  gap: 8px 16px;
+  margin-top: 6px;
+  margin-bottom: 10px;
 }
 
 .legend-item {
@@ -236,6 +266,64 @@ h1 {
   height: 14px;
   border-radius: 3px;
   flex: 0 0 14px;
+}
+
+.stage-coverage {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.stage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.stage-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stage-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-quantified {
+  background: var(--green-soft);
+  color: #31593a;
+}
+
+.status-pending {
+  background: var(--gold-soft);
+  color: #7a5e2d;
+}
+
+.status-mixed {
+  background: var(--accent-soft);
+  color: #2f5a87;
+  white-space: normal;
+  border-radius: 12px;
+  line-height: 1.25;
+  padding: 6px 10px;
+}
+
+.status-future {
+  background: rgba(91, 105, 120, 0.14);
+  color: #53606f;
 }
 
 .ring-text-block {
@@ -255,12 +343,13 @@ h1 {
 .operational-summary-card {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
 }
 
 .operational-summary-card .ring-wrap {
   flex: 0 0 auto;
-  height: 210px;
-  max-width: 320px;
+  height: 190px;
+  max-width: 300px;
   margin: 0 auto 10px;
 }
 
@@ -302,6 +391,11 @@ h1 {
   font-weight: 700;
   color: var(--text);
   line-height: 1.25;
+}
+
+.replacement-card .timeline-wrap {
+  min-height: 0;
+  height: calc(100% - 16px);
 }
 
 .timeline-wrap {
@@ -533,13 +627,13 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .primary-energy-layout {
-    grid-template-columns: 1fr;
+  .left-column,
+  .right-column {
+    display: block;
   }
 
-  .right-column {
-    grid-template-rows: auto;
-    height: auto;
+  .primary-energy-layout {
+    grid-template-columns: 1fr;
   }
 
   .summary-grid {
@@ -548,6 +642,12 @@ h1 {
 
   .primary-energy-chart-wrap {
     min-height: 340px;
+  }
+
+  .chart-card,
+  .side-card {
+    height: auto;
+    margin-bottom: 16px;
   }
 }
 
@@ -570,6 +670,10 @@ h1 {
   }
 
   .legend-list {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-row {
     grid-template-columns: 1fr;
   }
 
