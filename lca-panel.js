@@ -23,7 +23,9 @@ const palette = {
   softPurple: "rgba(97, 84, 141, 0.20)",
   purple: "#61548d",
   muted: "#6a7785",
-  line: "#c9d2dc"
+  line: "#c9d2dc",
+  replacement: "#d97a2b",
+  replacementSoft: "rgba(217, 122, 43, 0.20)"
 };
 
 if (window.Chart) {
@@ -60,10 +62,28 @@ function fmtNumber(value, digits = 2) {
   });
 }
 
+function fmtSignedNumber(value, digits = 2) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  const n = Number(value);
+  const abs = Math.abs(n).toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  });
+  if (n > 0) return `+${abs}`;
+  if (n < 0) return `-${abs}`;
+  return abs;
+}
+
 function fmtUnit(value, unit, digits = 2) {
   return value === null || value === undefined || Number.isNaN(Number(value))
     ? `— ${unit}`
     : `${fmtNumber(value, digits)} ${unit}`;
+}
+
+function fmtSignedUnit(value, unit, digits = 2) {
+  return value === null || value === undefined || Number.isNaN(Number(value))
+    ? `— ${unit}`
+    : `${fmtSignedNumber(value, digits)} ${unit}`;
 }
 
 function escapeHtml(value) {
@@ -149,22 +169,64 @@ function ensurePrimaryProfileSelector(activeProfile) {
   }
 }
 
-function buildEmbodiedLegend(components) {
+function getEmbodiedDisplayData(baseline, replacements) {
+  const baselineComponents = Array.isArray(baseline?.baseline_components) ? baseline.baseline_components : [];
+  const replacementEvents = Array.isArray(replacements) ? replacements : [];
+
+  const baselineItems = baselineComponents.map((comp) => ({
+    label: comp.component_code,
+    rawLabel: comp.component_code,
+    value: Number(comp.embodied_kgco2 || 0),
+    kind: "baseline"
+  }));
+
+  const replacementItems = replacementEvents.map((evt, idx) => {
+    const component = evt.component_code || `replacement_${idx + 1}`;
+    const added = Number(evt.added_embodied_kgco2 || evt.net_embodied_delta_kgco2 || 0);
+    return {
+      label: `replacement_${component}`,
+      rawLabel: component,
+      value: added,
+      kind: "replacement"
+    };
+  }).filter((x) => Number.isFinite(x.value) && x.value > 0);
+
+  return [...baselineItems, ...replacementItems];
+}
+
+function buildEmbodiedLegend(baseline, replacements) {
   const container = document.getElementById("embodiedLegend");
   if (!container) return;
 
-  if (!components.length) {
+  const items = getEmbodiedDisplayData(baseline, replacements);
+  if (!items.length) {
     container.innerHTML = `<div class="small-muted">No embodied-component data available.</div>`;
     return;
   }
 
-  const colors = [palette.blue, palette.gold, palette.green, "#8f6fb1", "#c76d6d", "#5f998f"];
-  container.innerHTML = components.map((comp, idx) => {
-    const color = colors[idx % colors.length];
+  const baselineColors = [palette.blue, palette.gold, palette.green, "#8f6fb1", "#c76d6d", "#5f998f", "#6f95bf", "#b28a4b"];
+  let baselineIdx = 0;
+  let replacementIdx = 0;
+
+  container.innerHTML = items.map((item) => {
+    let color = palette.blue;
+    let text = "";
+
+    if (item.kind === "baseline") {
+      color = baselineColors[baselineIdx % baselineColors.length];
+      baselineIdx += 1;
+      text = `${item.label} (${fmtNumber(item.value, 2)} kgCO₂e)`;
+    } else {
+      const replacementColors = [palette.replacement, "#b65f1b", "#cf8a52", "#e09f63"];
+      color = replacementColors[replacementIdx % replacementColors.length];
+      replacementIdx += 1;
+      text = `${item.label} (${fmtSignedNumber(item.value, 2)} kgCO₂e)`;
+    }
+
     return `
       <div class="legend-item">
         <span class="legend-swatch" style="background:${color}"></span>
-        <span>${escapeHtml(comp.component_code)} (${fmtNumber(comp.embodied_kgco2, 2)} kgCO₂e)</span>
+        <span>${escapeHtml(text)}</span>
       </div>
     `;
   }).join("");
@@ -175,11 +237,13 @@ function renderReplacementTimeline(replacements, baselineTotal) {
   if (!wrap) return;
 
   const items = [];
+  const initialBaselineTotal = Number(baselineTotal || 0);
+  let runningTotal = initialBaselineTotal;
 
   items.push(`
     <div class="timeline-entry">
       <div class="timeline-title">Installation / Baseline Record</div>
-      <div class="timeline-meta">Initial embodied inventory recorded: ${fmtNumber(baselineTotal, 2)} kgCO₂e</div>
+      <div class="timeline-meta">Initial embodied inventory recorded: ${fmtNumber(initialBaselineTotal, 2)} kgCO₂e</div>
       <div class="timeline-note">Monitoring remains active for future net embodied-carbon updates.</div>
     </div>
   `);
@@ -198,11 +262,24 @@ function renderReplacementTimeline(replacements, baselineTotal) {
   }
 
   replacements.forEach((evt) => {
+    const removed = Number(evt.removed_embodied_kgco2 || 0);
+    const added = Number(evt.added_embodied_kgco2 || 0);
+    const delta = Number(evt.net_embodied_delta_kgco2 || (added - removed) || 0);
+    runningTotal += delta;
+
+    const note = evt.note ? `<div class="timeline-note">${escapeHtml(evt.note)}</div>` : "";
+    const dateLine = evt.timestamp
+      ? `<div class="timeline-meta">Date: ${escapeHtml(formatStoredTimestamp(evt.timestamp))}</div>`
+      : "";
+
     items.push(`
       <div class="timeline-entry">
-        <div class="timeline-title">Replacement: ${escapeHtml(evt.component_code)}</div>
-        <div class="timeline-meta">Removed: ${fmtNumber(evt.removed_embodied_kgco2, 2)} kgCO₂e • Added: ${fmtNumber(evt.added_embodied_kgco2, 2)} kgCO₂e</div>
-        <div class="timeline-note">Net embodied-carbon delta: ${fmtNumber(evt.net_embodied_delta_kgco2, 2)} kgCO₂e</div>
+        <div class="timeline-title">Replacement: ${escapeHtml(evt.component_code || "—")}</div>
+        ${dateLine}
+        <div class="timeline-meta">Removed: ${fmtNumber(removed, 2)} kgCO₂e • Added: ${fmtNumber(added, 2)} kgCO₂e</div>
+        <div class="timeline-note">Net embodied-carbon delta: ${fmtSignedUnit(delta, "kgCO₂e", 2)}</div>
+        <div class="timeline-note">Updated cumulative embodied total: ${fmtUnit(runningTotal, "kgCO₂e", 2)}</div>
+        ${note}
       </div>
     `);
   });
@@ -234,28 +311,16 @@ function renderLedger(records) {
   }
 
   const ledgerRecords = [...records].sort((a, b) =>
-  String(b.day || "").localeCompare(String(a.day || ""))
-);
+    String(b.day || "").localeCompare(String(a.day || ""))
+  );
 
-body.innerHTML = ledgerRecords.map((rec) => {
+  body.innerHTML = ledgerRecords.map((rec) => {
     const ok = !rec.chain_error && rec.chain_tx_hash;
     const statusClass = ok ? "status-ok" : "status-fail";
     const statusText = ok ? "Anchored" : (rec.chain_error ? "Issue" : "Pending");
 
     const snapshotHash = rec.snapshot_hash_hex || "";
     const chainTxHash = rec.chain_tx_hash || "";
-
-    const snapshotCell = snapshotHash
-      ? `
-        <a
-          href="${buildSepoliaSearchUrl(snapshotHash)}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hash-link"
-          title="${escapeHtml(snapshotHash)}"
-        >${escapeHtml(shortenHash(snapshotHash))}</a>
-      `
-      : "—";
 
     const txCell = chainTxHash
       ? `
@@ -286,10 +351,11 @@ body.innerHTML = ledgerRecords.map((rec) => {
   }).join("");
 }
 
-function renderCards(baseline, records, panelId) {
+function renderCards(baseline, records, panelId, replacements) {
   const baselineProfile = baseline?.baseline_environmental_profile || {};
   const currentTotals = baseline?.current_totals || {};
-  const baselineTotal = currentTotals.current_embodied_kgco2e ?? baselineProfile.total_embodied_kgco2e;
+  const initialBaselineTotal = baselineProfile.total_embodied_kgco2e ?? 0;
+  const currentEmbodiedTotal = currentTotals.current_embodied_kgco2e ?? initialBaselineTotal;
   const statusText = records.length ? "Active monitoring" : "No daily data yet";
 
   setText("pageTitle", `Façade LCA Lifecycle Monitor: ${panelId}`);
@@ -299,10 +365,27 @@ function renderCards(baseline, records, panelId) {
 
   setText("cardPanelId", panelId || "—");
   setText("cardBaselineU", fmtUnit(baselineProfile.baseline_u_value_w_m2k, "W/m²K", 2));
-  setText("cardEmbodied", fmtUnit(baselineTotal, "kgCO₂e", 2));
+  setText("cardEmbodied", fmtUnit(currentEmbodiedTotal, "kgCO₂e", 2));
   setText("cardOperational", fmtUnit(currentTotals.cumulative_operational_co2e_kg, "kgCO₂e", 2));
   setText("cardExtraEnergy", fmtUnit(currentTotals.latest_extra_energy_kwh, "kWh/day", 3));
   setText("cardRecordCount", String(records.length));
+
+  const summaryWrap = document.getElementById("embodiedSummary");
+  if (summaryWrap) {
+    const replacementDeltaSum = (Array.isArray(replacements) ? replacements : []).reduce((sum, evt) => {
+      return sum + Number(evt.net_embodied_delta_kgco2 || 0);
+    }, 0);
+
+    summaryWrap.innerHTML = `
+      <div class="primary-energy-summary-block">
+        <div class="primary-energy-grid">
+          <div><span class="small-muted">Initial baseline embodied CO₂e</span><br><strong>${fmtUnit(initialBaselineTotal, "kgCO₂e", 2)}</strong></div>
+          <div><span class="small-muted">Cumulative replacement additions</span><br><strong>${fmtSignedUnit(replacementDeltaSum, "kgCO₂e", 2)}</strong></div>
+          <div><span class="small-muted">Current total embodied CO₂e</span><br><strong>${fmtUnit(currentEmbodiedTotal, "kgCO₂e", 2)}</strong></div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function renderUChart(records) {
@@ -317,20 +400,19 @@ function renderUChart(records) {
     type: "line",
     data: {
       labels,
-
       datasets: [
-  {
-    label: "Measured U-Value",
-    data: measured,
-    borderColor: palette.blue,
-    backgroundColor: "rgba(83, 116, 154, 0.18)",
-    fill: "+1",
-    borderWidth: 2.4,
-    pointRadius: 2,
-    tension: 0.25,
-    yAxisID: "y",
-    order: 1
-  },
+        {
+          label: "Measured U-Value",
+          data: measured,
+          borderColor: palette.blue,
+          backgroundColor: "rgba(83, 116, 154, 0.18)",
+          fill: "+1",
+          borderWidth: 2.4,
+          pointRadius: 2,
+          tension: 0.25,
+          yAxisID: "y",
+          order: 1
+        },
         {
           label: "Baseline U-Value",
           data: baseline,
@@ -534,17 +616,34 @@ function renderCarbonChart(records) {
   });
 }
 
-function renderEmbodiedChart(baseline) {
-  const comps = Array.isArray(baseline?.baseline_components) ? baseline.baseline_components : [];
-  buildEmbodiedLegend(comps);
+function renderEmbodiedChart(baseline, replacements) {
+  const dataItems = getEmbodiedDisplayData(baseline, replacements);
+  buildEmbodiedLegend(baseline, replacements);
+
+  const baselineColors = [palette.blue, palette.gold, palette.green, "#8f6fb1", "#c76d6d", "#5f998f", "#6f95bf", "#b28a4b"];
+  const replacementColors = [palette.replacement, "#b65f1b", "#cf8a52", "#e09f63"];
+
+  let baselineIdx = 0;
+  let replacementIdx = 0;
+
+  const bgColors = dataItems.map((item) => {
+    if (item.kind === "replacement") {
+      const c = replacementColors[replacementIdx % replacementColors.length];
+      replacementIdx += 1;
+      return c;
+    }
+    const c = baselineColors[baselineIdx % baselineColors.length];
+    baselineIdx += 1;
+    return c;
+  });
 
   upsertChart("embodiedChart", document.getElementById("embodiedChart"), {
     type: "doughnut",
     data: {
-      labels: comps.map((c) => c.component_code),
+      labels: dataItems.map((x) => x.label),
       datasets: [{
-        data: comps.map((c) => Number(c.embodied_kgco2 || 0)),
-        backgroundColor: [palette.blue, palette.gold, palette.green, "#8f6fb1", "#c76d6d", "#5f998f"],
+        data: dataItems.map((x) => Number(x.value || 0)),
+        backgroundColor: bgColors,
         borderColor: "#ffffff",
         borderWidth: 3
       }]
@@ -557,7 +656,14 @@ function renderEmbodiedChart(baseline) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`
+            label: (ctx) => {
+              const item = dataItems[ctx.dataIndex];
+              if (!item) return `${ctx.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`;
+              if (item.kind === "replacement") {
+                return `${item.label}: ${fmtSignedNumber(ctx.raw, 2)} kgCO₂e`;
+              }
+              return `${item.label}: ${fmtNumber(ctx.raw, 2)} kgCO₂e`;
+            }
           }
         }
       }
@@ -779,18 +885,18 @@ function render(payload) {
   selectedPrimaryProfile = activeProfile;
   ensurePrimaryProfileSelector(activeProfile);
 
-  renderCards(baseline, records, panelId);
+  renderCards(baseline, records, panelId, replacements);
   renderUChart(records);
   renderEnergyChart(records);
   renderCarbonChart(records);
-  renderEmbodiedChart(baseline);
+  renderEmbodiedChart(baseline, replacements);
   renderOperationalRing(baseline, records);
   renderPrimaryEnergyChart(records);
   renderPrimaryEnergySummary(baseline, records, activeProfile);
   renderReplacementTimeline(
     replacements,
-    baseline?.current_totals?.current_embodied_kgco2e ??
-      baseline?.baseline_environmental_profile?.total_embodied_kgco2e ??
+    baseline?.baseline_environmental_profile?.total_embodied_kgco2e ??
+      baseline?.current_totals?.current_embodied_kgco2e ??
       0
   );
   renderLedger(records);
