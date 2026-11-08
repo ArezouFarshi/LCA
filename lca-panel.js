@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE = "https://oracle-ml-oracle-backend.onrender.com/api/lca";
+const DEFAULT_API_BASE = "https://oracle-ml-oracle-backend-c32y.onrender.com/api/lca";
 const params = new URLSearchParams(window.location.search);
 const PANEL_ID = params.get("panel_id") || "ID_27_C_42";
 const RAW_API_URL = params.get("api_url") || `${DEFAULT_API_BASE}/${encodeURIComponent(PANEL_ID)}`;
